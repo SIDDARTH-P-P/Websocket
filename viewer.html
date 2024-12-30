@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Camera Feed</title>
+</head>
+<body>
+    <h1>Viewing Camera Feed</h1>
+    <video id="camera" autoplay playsinline controls></video>
+
+    <script>
+        async function startReceivingStream() {
+            const socket = new WebSocket('ws://localhost:3001');
+            const mediaSource = new MediaSource();
+            const videoElement = document.getElementById('camera');
+            videoElement.src = URL.createObjectURL(mediaSource);
+
+            mediaSource.addEventListener('sourceopen', () => {
+                const sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs=vp8');
+                const bufferQueue = [];
+
+                socket.onmessage = async (event) => {
+                    if (event.data instanceof Blob) {
+                        const arrayBuffer = await event.data.arrayBuffer();
+                        bufferQueue.push(arrayBuffer);
+                        if (!sourceBuffer.updating) {
+                            processBufferQueue();
+                        }
+                    }
+                };
+
+                function processBufferQueue() {
+                    if (bufferQueue.length > 0 && !sourceBuffer.updating) {
+                        sourceBuffer.appendBuffer(new Uint8Array(bufferQueue.shift()));
+                    }
+                }
+
+                sourceBuffer.addEventListener('updateend', processBufferQueue);
+            });
+
+            socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            socket.onclose = () => {
+                console.log('WebSocket connection closed');
+                if (mediaSource.readyState === 'open') {
+                    mediaSource.endOfStream();
+                }
+            };
+        }
+
+        startReceivingStream(); // Start receiving the video stream
+    </script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Camera</title>
+</head>
+<body>
+    <h1>Stream Camera Feed</h1> 
+    <video id="camera" autoplay playsinline></video>
+
+    <script>
+        async function startStreaming() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const videoElement = document.getElementById('camera');
+                videoElement.srcObject = stream;
+
+                const socket = new WebSocket('ws://localhost:3001');
+
+                socket.onopen = () => {
+                    const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp8' });
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (socket.readyState === WebSocket.OPEN && event.data.size > 0) {
+                            socket.send(event.data);
+                        }
+                    };
+
+                    mediaRecorder.start(1000);
+                };
+
+                socket.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+
+                socket.onclose = () => {
+                    console.log('WebSocket connection closed');
+                };
+            } catch (error) {
+                console.error('Error accessing the camera:', error);
+            }
+        }
+
+        startStreaming();
+    </script>
+</body>
+</html>
