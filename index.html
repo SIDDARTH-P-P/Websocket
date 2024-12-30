@@ -16,7 +16,7 @@
                 const videoElement = document.getElementById('camera');
                 videoElement.srcObject = stream;
 
-                const socket = new WebSocket('ws://localhost:3001');
+                const socket = new WebSocket('ws://localhost:3000');
 
                 socket.onopen = () => {
                     const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp8' });

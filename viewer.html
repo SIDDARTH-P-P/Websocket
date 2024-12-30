@@ -11,7 +11,7 @@
 
     <script>
         async function startReceivingStream() {
-            const socket = new WebSocket('ws://localhost:3001');
+            const socket = new WebSocket('ws://localhost:3000');
             const mediaSource = new MediaSource();
             const videoElement = document.getElementById('camera');
             videoElement.src = URL.createObjectURL(mediaSource);
